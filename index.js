@@ -18,6 +18,8 @@ var connection = mysql.createConnection({
     database: 'rikivino'
 });
 
+let puntosPorGordo = [];
+
 
 
 //busca todos los gordos o el gordo que pases por query param
@@ -75,6 +77,18 @@ let gordo2 = {
     lavado: true,
     ensalada: true,
     vino: 2,
+    fecha: "2020-07-31"
+};
+let gordo3 = {
+    nombre: 'Cacho',
+    asistencia: true,
+    sede: false,
+    compras: false,
+    bebida: false,
+    asador: false,
+    lavado: false,
+    ensalada: false,
+    vino: 0,
     fecha: "2020-07-31"
 };
 
@@ -141,14 +155,23 @@ app.get('/puntos', function(req, res) {
             sql = 'SELECT * from asado';
             connection.query(sql, (err, results, fields) => {
                 if (err) reject(err);
-                // console.log(results);
+                let todosAsados = Object.values(JSON.parse(JSON.stringify(results)))
+                for (let i = 0; i < gordos.length; i++) {
+                    const asadosFiltrados = todosAsados.filter(asado => asado.gordo === gordos[i].nombre)
+                        // console.log(asadosFiltrados);
+                        // console.log('estos son los asados filtrados', asadosFiltrados);
+                    asadosFiltrados.forEach(asado => {
+                        sumarPuntos(gordos[i], i, asado)
+                    });
+                }
+                console.log('estos son los puntos por cada gordo', puntosPorGordo)
                 resolve(results);
             });
 
         }).then(response => {
             // console.log(response)
             // console.log(response, 'esto es la segunda respuesta')
-            res.status(200).send(gordos);
+            res.status(200).send(puntosPorGordo);
         }).catch(e => {
 
         });
@@ -187,6 +210,45 @@ app.delete('/insertarasado', (req, res) => {
 
 
 });
+
+function sumarPuntos(gordo, index, asado) {
+    let { asistencia, sede, compras, bebida, asador, lavado, ensalada, vino } = asado
+    let puntos = 0;
+    if (!puntosPorGordo[index]) {
+        puntosPorGordo[index] = {
+            nombre: gordo.nombre,
+            puntos: 0
+
+        }
+    }
+    if (asistencia === 1) {
+        puntos += 2
+    };
+    if (sede === 1) {
+        puntos += 3
+    };
+    if (compras === 1) {
+        puntos += 1
+    };
+    if (bebida === 1) {
+        puntos += 1
+    };
+    if (asador === 1) {
+        puntos += 3
+    };
+    if (lavado === 1) {
+        puntos += 2
+    };
+    if (ensalada === 1) {
+        puntos += 1
+    };
+    if (vino) {
+        puntos += vino
+    }
+    puntosPorGordo[index].puntos = puntosPorGordo[index].puntos + puntos;
+
+
+};
 
 
 app.listen(3000, function() {
